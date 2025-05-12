@@ -380,31 +380,59 @@ blockquote:hover {
         // Initialiser Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-      
-        // Compteur de participants
         const participantsRef = db.collection('counters').doc('participants');
       
-        // Gestion du clic
-        document.getElementById('cta-btn').addEventListener('click', () => {
-          participantsRef.update({
-            count: firebase.firestore.FieldValue.increment(1)
-          }).then(() => {
-            const btn = document.getElementById('cta-btn');
-            btn.textContent = '✓ Confirmé';
+        // Vérifier si l'utilisateur a déjà participé (stockage local + Firebase)
+        function checkParticipation() {
+          const hasParticipated = localStorage.getItem('hasParticipated') === 'true';
+          const btn = document.getElementById('cta-btn');
+          
+          if (hasParticipated) {
+            btn.textContent = '✓ Déjà participé';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('bg-purple-600');
             btn.disabled = true;
-          });
+          }
+        }
+      
+        // Gestion du clic
+        document.getElementById('cta-btn').addEventListener('click', async () => {
+          try {
+            // 1. Enregistrer dans Firebase
+            await participantsRef.update({
+              count: firebase.firestore.FieldValue.increment(1),
+              lastUpdate: new Date().toISOString()
+            });
+            
+            // 2. Marquer comme participé en local
+            localStorage.setItem('hasParticipated', 'true');
+            
+            // 3. Désactiver le bouton
+            const btn = document.getElementById('cta-btn');
+            btn.textContent = '✓ Merci !';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('bg-purple-600');
+            btn.disabled = true;
+            
+          } catch (error) {
+            console.error("Erreur :", error);
+            alert("Une erreur est survenue. Rechargez la page et réessayez.");
+          }
         });
       
-        // Mise à jour en temps réel
+        // Mise à jour du compteur en temps réel
         participantsRef.onSnapshot((doc) => {
           const data = doc.data();
-          if (data) {
+          if (data && data.count !== undefined) {
             document.getElementById('participants-count').textContent = data.count;
             document.getElementById('participants-counter').style.display = 'block';
           }
         });
       
-        // Compte à rebours (conservez cette partie)
+        // Vérification au chargement
+        checkParticipation();
+      
+        // Compte à rebours (conservé de votre code original)
         function updateCountdown() {
           const eventDate = new Date('May 17, 2025 21:30:00').getTime();
           const now = new Date().getTime();
