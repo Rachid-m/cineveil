@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CIN'EVEIL - Et si chaque seconde comptait?</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <style>
@@ -209,6 +212,7 @@ blockquote:hover {
     </style>
 </head>
 <body>
+    
     <div class="grid-bg"></div>
     
     
@@ -309,7 +313,7 @@ blockquote:hover {
                 </div>
                 <h3 class="text-xl font-bold mb-3">Lieu</h3>
                 <p class="text-gray-300 mb-4">Thiès, Cité Ouvrière<br>Campus HDR</p>
-                <div class="text-sm text-gray-400">Bus: Ligne 7 </div>
+                <div class="text-sm text-gray-400">Restaurant </div>
             </div>
             
             <div class="info-card p-8">
@@ -363,101 +367,61 @@ blockquote:hover {
     </div>
     
     <script>
-        // Remplacer la fonction updateCountdown() existante par :
-function updateCountdown() {
-    const eventDate = new Date('May 17, 2025 21:30:00').getTime();
-    const now = new Date().getTime();
-    const distance = eventDate - now;
-    
-    // Calculs du temps
-    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    // Affichage
-    document.getElementById('countdown-days').textContent = days.toString().padStart(2, '0');
-    document.getElementById('countdown-hours').textContent = hours.toString().padStart(2, '0');
-    document.getElementById('countdown-minutes').textContent = minutes.toString().padStart(2, '0');
-    document.getElementById('countdown-seconds').textContent = seconds.toString().padStart(2, '0');
-    
-    // Si le compte à rebours est terminé
-    if (distance < 0) {
-        clearInterval(countdownTimer);
-        document.getElementById('countdown-days').textContent = '00';
-        document.getElementById('countdown-hours').textContent = '00';
-        document.getElementById('countdown-minutes').textContent = '00';
-        document.getElementById('countdown-seconds').textContent = '00';
-    }
-}
-
-// Lancer le compte à rebours immédiatement puis toutes les secondes
-    updateCountdown();
-    const countdownTimer = setInterval(updateCountdown, 1000);
-            // Initialiser le compteur de participants depuis le stockage local ou utiliser la valeur par défaut
-        let totalParticipants = parseInt(localStorage.getItem('cineveilParticipants')) || 0;
-        let hasParticipated = localStorage.getItem('cineveilHasParticipated') === 'true';
-        
-        // Mettre à jour l'affichage initial du compteur
-        document.getElementById('participants-count').textContent = totalParticipants.toLocaleString();
-        
-        // Vérifier si l'utilisateur a déjà participé et mettre à jour le bouton en conséquence
-        if (hasParticipated) {
-            const ctaBtn = document.getElementById('cta-btn');
-            ctaBtn.textContent = 'Confirmation envoyée ✓';
-            ctaBtn.classList.remove('btn-primary');
-            ctaBtn.classList.add('bg-purple-600');
-            ctaBtn.disabled = true;
-            
-            // Afficher le compteur
+        // Configuration Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyBNPgqlfWtGA4t81HU4UX2SZ0WQd4hihrA",
+          authDomain: "cineveil-27028.firebaseapp.com",
+          projectId: "cineveil-27028",
+          storageBucket: "cineveil-27028.appspot.com",
+          messagingSenderId: "782398860570",
+          appId: "1:782398860570:web:317234eb0f6667c94510a3"
+        };
+      
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+      
+        // Compteur de participants
+        const participantsRef = db.collection('counters').doc('participants');
+      
+        // Gestion du clic
+        document.getElementById('cta-btn').addEventListener('click', () => {
+          participantsRef.update({
+            count: firebase.firestore.FieldValue.increment(1)
+          }).then(() => {
+            const btn = document.getElementById('cta-btn');
+            btn.textContent = '✓ Confirmé';
+            btn.disabled = true;
+          });
+        });
+      
+        // Mise à jour en temps réel
+        participantsRef.onSnapshot((doc) => {
+          const data = doc.data();
+          if (data) {
+            document.getElementById('participants-count').textContent = data.count;
             document.getElementById('participants-counter').style.display = 'block';
+          }
+        });
+      
+        // Compte à rebours (conservez cette partie)
+        function updateCountdown() {
+          const eventDate = new Date('May 17, 2025 21:30:00').getTime();
+          const now = new Date().getTime();
+          const distance = eventDate - now;
+          
+          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+          
+          document.getElementById('countdown-days').textContent = days.toString().padStart(2, '0');
+          document.getElementById('countdown-hours').textContent = hours.toString().padStart(2, '0');
+          document.getElementById('countdown-minutes').textContent = minutes.toString().padStart(2, '0');
+          document.getElementById('countdown-seconds').textContent = seconds.toString().padStart(2, '0');
         }
-        
-        // CTA button interaction
-        document.getElementById('cta-btn').addEventListener('click', function() {
-            // Afficher le compteur
-            const counter = document.getElementById('participants-counter');
-            counter.style.display = 'block';
-            
-            // Vérifier si l'utilisateur a déjà participé
-            if (!hasParticipated) {
-                // Incrémenter le compteur de 1 (pour cet utilisateur)
-                totalParticipants += 1;
-                
-                // Sauvegarder dans le stockage local
-                localStorage.setItem('cineveilParticipants', totalParticipants);
-                localStorage.setItem('cineveilHasParticipated', 'true');
-                hasParticipated = true;
-                
-                // Mettre à jour l'affichage avec animation
-                const countElement = document.getElementById('participants-count');
-                
-                // Animation d'incrémentation
-                countElement.classList.add('text-green-400');
-                countElement.textContent = totalParticipants.toLocaleString();
-                
-                // Revenir à la couleur normale après l'animation
-                setTimeout(() => {
-                    countElement.classList.remove('text-green-400');
-                }, 1000);
-            }
-            
-            // Change button text and style
-            this.textContent = 'Confirmation envoyée ✓';
-            this.classList.remove('bg-gradient-to-r', 'from-cyan-400', 'to-green-400');
-            this.classList.add('bg-purple-600');
-            this.disabled = true;
-        });
-        
-        // Add glitch effect to title on hover
-        const title = document.querySelector('.title-glitch');
-        title.addEventListener('mouseenter', function() {
-            this.style.animation = 'glitch 0.5s infinite linear';
-        });
-        
-        title.addEventListener('mouseleave', function() {
-            this.style.animation = 'glitch 2s infinite linear';
-        });
-    </script>
-</body>
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+      </script>
+      </body>
 </html>
